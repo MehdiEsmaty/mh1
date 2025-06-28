@@ -1,0 +1,48 @@
+stages:
+  - test
+  - build
+
+variables:
+  DOCKER_DRIVER: overlay2
+
+# -------------------------
+# Unit Test - Python Flask
+# -------------------------
+test_python:
+  stage: test
+  image: python:3.9-slim
+  script:
+    - pip install --no-cache-dir -r Python/requirements.txt
+    - python Python/test_app.py
+
+# -------------------------
+# Unit Test - Rust Actix
+# -------------------------
+test_rust:
+  stage: test
+  image: rust:1.88
+  script:
+    - cd Rust
+    - cargo test
+
+# -------------------------
+# Build Docker Image - Flask
+# -------------------------
+build_python:
+  stage: build
+  image: docker:24.0.2
+  services:
+    - docker:dind
+  script:
+    - docker build -t flask-hello ./Python
+
+# -------------------------
+# Build Docker Image - Rust
+# -------------------------
+build_rust:
+  stage: build
+  image: docker:24.0.2
+  services:
+    - docker:dind
+  script:
+    - docker build -t actix-hello ./Rust
