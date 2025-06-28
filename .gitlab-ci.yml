@@ -1,51 +1,30 @@
+```yaml
 stages:
   - test
   - build
   - deploy
 
-variables:
-  CI_PYTHON_IMAGE: python:3.9-slim
-  CI_RUST_IMAGE: rust:1.88
-  DOCKER_DRIVER: overlay2
-
 # -------------------------
-# Test: Python Flask (fully isolated, no host writes)
+# Test: Python Flask (local execution)
 # -------------------------
 test_python:
   stage: test
   tags:
     - runner1
   script:
-    - docker run --rm \
-        -v "$CI_PROJECT_DIR/Python":/src:ro \
-        --tmpfs /app:rw \
-        -w /app \
-        $CI_PYTHON_IMAGE \
-        sh -c "\
-          cp -r /src/* . && \
-          pip install --no-cache-dir --prefix=/tmp/pip-temp -r requirements.txt && \
-          PYTHONPATH=/tmp/pip-temp/lib/python3.9/site-packages \
-            PYTHONDONTWRITEBYTECODE=1 \
-            python test_app.py\
-        "
+    - pip install --no-cache-dir -r Python/requirements.txt
+    - python3 Python/test_app.py
 
 # -------------------------
-# Test: Rust Actix (fully isolated, no host writes)
+# Test: Rust Actix (local execution)
 # -------------------------
 test_rust:
   stage: test
   tags:
     - runner1
   script:
-    - docker run --rm \
-        -v "$CI_PROJECT_DIR/Rust":/src:ro \
-        --tmpfs /app:rw \
-        -w /app \
-        $CI_RUST_IMAGE \
-        sh -c "\
-          cp -r /src/* . && \
-          CARGO_TARGET_DIR=/tmp/target cargo test\
-        "
+    - cd Rust
+    - cargo test
 
 # -------------------------
 # Build: Python Image
@@ -76,3 +55,4 @@ deploy:
     - runner1
   script:
     - docker-compose up -d
+```
