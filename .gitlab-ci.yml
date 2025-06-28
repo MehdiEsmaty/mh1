@@ -4,6 +4,8 @@ stages:
   - deploy
 
 variables:
+  CI_PYTHON_IMAGE: python:3.9-slim
+  CI_RUST_IMAGE: rust:1.88
   DOCKER_DRIVER: overlay2
 
 # -------------------------
@@ -14,11 +16,16 @@ test_python:
   tags:
     - runner1
   script:
-    # حذف کش قدیمی
+    # clean up any old .pyc files
     - rm -rf Python/__pycache__ || true
 
-    # اجرای تست پایتون داخل کانتینر با user فعلی
-    - docker run --rm -u $(id -u):$(id -g) -v $CI_PROJECT_DIR/Python:/app -w /app python:3.9-slim sh -c "pip install -r requirements.txt && python test_app.py"
+    # run tests in an isolated pip prefix under /tmp
+    - docker run --rm \
+        -v "$CI_PROJECT_DIR/Python":/app \
+        -w /app \
+        $CI_PYTHON_IMAGE \
+        sh -c "pip install --no-cache-dir --prefix=/tmp/pip-temp -r requirements.txt && \
+               PYTHONPATH=/tmp/pip-temp/lib/python3.9/site-packages python test_app.py"
 
 # -------------------------
 # Test: Rust Actix
@@ -28,8 +35,11 @@ test_rust:
   tags:
     - runner1
   script:
-    # اجرای تست Rust داخل کانتینر رسمی
-    - docker run --rm -v $CI_PROJECT_DIR/Rust:/app -w /app rust:1.88 cargo test
+    - docker run --rm \
+        -v "$CI_PROJECT_DIR/Rust":/app \
+        -w /app \
+        $CI_RUST_IMAGE \
+        sh -c "cargo test"
 
 # -------------------------
 # Build: Python Image
@@ -52,7 +62,7 @@ build_rust:
     - docker build -t microservices_rust_app ./Rust
 
 # -------------------------
-# Deploy: Compose Up
+# Deploy: Docker Compose
 # -------------------------
 deploy:
   stage: deploy
