@@ -1,0 +1,20 @@
+version: "3.8"
+
+services:
+  python_app:
+    build:
+      context: ./Python
+      dockerfile: Dockerfile
+    container_name: flask_hello
+    ports:
+      - "5000:5000"
+    restart: unless-stopped
+
+  rust_app:
+    build:
+      context: ./Rust
+      dockerfile: Dockerfile
+    container_name: actix_hello
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
