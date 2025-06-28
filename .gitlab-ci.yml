@@ -7,30 +7,37 @@ variables:
   DOCKER_DRIVER: overlay2
 
 # -------------------------
-# Unit Test - Python Flask
+# Test: Python Flask
 # -------------------------
 test_python:
   stage: test
   tags:
     - runner1
   script:
-    - docker run --rm -u $(id -u):$(id -g) -v $CI_PROJECT_DIR/Python:/app -w /app python:3.9-slim sh -c "pip install -r requirements.txt && python test_app.py"
+    # حذف cache قدیمی برای جلوگیری از خطای دسترسی
     - rm -rf Python/__pycache__ || true
 
+    # اجرای تست داخل کانتینر با UID کاربر جاری
+    - docker run --rm -u $(id -u):$(id -g) -v $CI_PROJECT_DIR/Python:/app -w /app python:3.9-slim \
+        sh -c "pip install -r requirements.txt && python test_app.py"
+
 # -------------------------
-# Unit Test - Rust Actix
+# Test: Rust Actix
 # -------------------------
 test_rust:
   stage: test
   tags:
     - runner1
   script:
+    # اضافه کردن cargo به PATH
     - export PATH="$HOME/.cargo/bin:$PATH"
+
+    # اجرای تست Rust
     - cd Rust
     - cargo test
 
 # -------------------------
-# Build Docker Image - Flask
+# Build: Python Image
 # -------------------------
 build_python:
   stage: build
@@ -40,7 +47,7 @@ build_python:
     - docker build -t microservices_python_app ./Python
 
 # -------------------------
-# Build Docker Image - Rust
+# Build: Rust Image
 # -------------------------
 build_rust:
   stage: build
@@ -50,7 +57,7 @@ build_rust:
     - docker build -t microservices_rust_app ./Rust
 
 # -------------------------
-# Deploy using docker-compose
+# Deploy: Compose Up
 # -------------------------
 deploy:
   stage: deploy
