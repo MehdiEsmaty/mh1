@@ -6,23 +6,32 @@ stages:
 variables:
   DOCKER_DRIVER: overlay2
 
-# Python Test inside Docker container
+# -------------------------
+# Unit Test - Python Flask
+# -------------------------
 test_python:
   stage: test
   tags:
     - runner1
   script:
-    - docker run --rm -v $CI_PROJECT_DIR/Python:/app -w /app python:3.9-slim sh -c "pip install -r requirements.txt && python test_app.py"
+    - docker run --rm -u $(id -u):$(id -g) -v $CI_PROJECT_DIR/Python:/app -w /app python:3.9-slim sh -c "pip install -r requirements.txt && python test_app.py"
+    - rm -rf Python/__pycache__ || true
 
-# Rust Test inside Docker container
+# -------------------------
+# Unit Test - Rust Actix
+# -------------------------
 test_rust:
   stage: test
   tags:
     - runner1
   script:
-    - docker run --rm -v $CI_PROJECT_DIR/Rust:/app -w /app rust:1.88 sh -c "cargo test"
+    - export PATH="$HOME/.cargo/bin:$PATH"
+    - cd Rust
+    - cargo test
 
-# Build Python Docker Image (runs on host docker)
+# -------------------------
+# Build Docker Image - Flask
+# -------------------------
 build_python:
   stage: build
   tags:
@@ -30,7 +39,9 @@ build_python:
   script:
     - docker build -t microservices_python_app ./Python
 
-# Build Rust Docker Image
+# -------------------------
+# Build Docker Image - Rust
+# -------------------------
 build_rust:
   stage: build
   tags:
@@ -38,7 +49,9 @@ build_rust:
   script:
     - docker build -t microservices_rust_app ./Rust
 
-# Deploy using docker-compose (assumes docker-compose.yml exists)
+# -------------------------
+# Deploy using docker-compose
+# -------------------------
 deploy:
   stage: deploy
   tags:
