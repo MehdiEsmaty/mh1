@@ -18,7 +18,9 @@ test_python:
     - rm -rf Python/__pycache__ || true
 
     # اجرای تست داخل کانتینر با UID کاربر جاری
-    - docker run --rm -u $(id -u):$(id -g) -v $CI_PROJECT_DIR/Python:/app -w /app python:3.9-slim \
+    - docker run --rm -u $(id -u):$(id -g) \
+        -v $CI_PROJECT_DIR/Python:/app \
+        -w /app python:3.9-slim \
         sh -c "pip install -r requirements.txt && python test_app.py"
 
 # -------------------------
