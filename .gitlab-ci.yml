@@ -16,10 +16,7 @@ test_python:
   tags:
     - runner1
   script:
-    # پاک کردن کش پایتون
     - rm -rf Python/__pycache__ || true
-
-    # اجرای تست داخل کانتینر با نصب در /tmp
     - docker run --rm \
         -v "$CI_PROJECT_DIR/Python":/app \
         -w /app \
@@ -35,11 +32,12 @@ test_rust:
   tags:
     - runner1
   script:
-    # پاک کردن پوشه target برای جلوگیری از خطای permission
+    # پاک کردن پوشه target قدیمی (با اجازه نادیده گرفتن خطا)
     - rm -rf Rust/target || true
 
-    # اجرای تست Rust در کانتینر رسمی
+    # اجرای تست داخل کانتینر با UID کاربر جاری تا فایل‌های incremental متعلق به gitlab-runner باشد
     - docker run --rm \
+        -u $(id -u):$(id -g) \
         -v "$CI_PROJECT_DIR/Rust":/app \
         -w /app \
         $CI_RUST_IMAGE \
