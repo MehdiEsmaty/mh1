@@ -1,6 +1,8 @@
+```yaml
 stages:
   - test
   - build
+  - deploy
 
 variables:
   DOCKER_DRIVER: overlay2
@@ -11,6 +13,8 @@ variables:
 test_python:
   stage: test
   image: python:3.9-slim
+  tags:
+    - runner1
   script:
     - pip install --no-cache-dir -r Python/requirements.txt
     - python Python/test_app.py
@@ -21,28 +25,48 @@ test_python:
 test_rust:
   stage: test
   image: rust:1.88
+  tags:
+    - runner1
   script:
     - cd Rust
     - cargo test
 
 # -------------------------
-# Build Docker Image - Flask
+# Build Docker Image - Flask (Always build)
 # -------------------------
 build_python:
   stage: build
   image: docker:24.0.2
   services:
     - docker:dind
+  tags:
+    - runner1
   script:
-    - docker build -t flask-hello ./Python
+    - docker build -t microservices_python_app ./Python
 
 # -------------------------
-# Build Docker Image - Rust
+# Build Docker Image - Rust (Always build)
 # -------------------------
 build_rust:
   stage: build
   image: docker:24.0.2
   services:
     - docker:dind
+  tags:
+    - runner1
   script:
-    - docker build -t actix-hello ./Rust
+    - docker build -t microservices_rust_app ./Rust
+
+# -------------------------
+# Deploy Stage
+# -------------------------
+deploy:
+  stage: deploy
+  image: docker:24.0.2
+  services:
+    - docker:dind
+  tags:
+    - runner1
+  script:
+    - docker-compose up -d
+```
