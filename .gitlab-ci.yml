@@ -16,10 +16,10 @@ test_python:
   tags:
     - runner1
   script:
-    # clean up any old .pyc files
+    # پاک کردن کش پایتون
     - rm -rf Python/__pycache__ || true
 
-    # run tests in an isolated pip prefix under /tmp
+    # اجرای تست داخل کانتینر با نصب در /tmp
     - docker run --rm \
         -v "$CI_PROJECT_DIR/Python":/app \
         -w /app \
@@ -35,6 +35,10 @@ test_rust:
   tags:
     - runner1
   script:
+    # پاک کردن پوشه target برای جلوگیری از خطای permission
+    - rm -rf Rust/target || true
+
+    # اجرای تست Rust در کانتینر رسمی
     - docker run --rm \
         -v "$CI_PROJECT_DIR/Rust":/app \
         -w /app \
