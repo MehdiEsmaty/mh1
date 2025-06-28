@@ -68,4 +68,3 @@ deploy:
     - runner1
   script:
     - docker-compose up -d
-```
