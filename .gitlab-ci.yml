@@ -14,14 +14,11 @@ test_python:
   tags:
     - runner1
   script:
-    # حذف cache قدیمی برای جلوگیری از خطای دسترسی
+    # حذف کش قدیمی
     - rm -rf Python/__pycache__ || true
 
-    # اجرای تست داخل کانتینر با UID کاربر جاری
-    - docker run --rm -u $(id -u):$(id -g) \
-        -v $CI_PROJECT_DIR/Python:/app \
-        -w /app python:3.9-slim \
-        sh -c "pip install -r requirements.txt && python test_app.py"
+    # اجرای تست پایتون داخل کانتینر با user فعلی
+    - docker run --rm -u $(id -u):$(id -g) -v $CI_PROJECT_DIR/Python:/app -w /app python:3.9-slim sh -c "pip install -r requirements.txt && python test_app.py"
 
 # -------------------------
 # Test: Rust Actix
@@ -31,12 +28,8 @@ test_rust:
   tags:
     - runner1
   script:
-    # اضافه کردن cargo به PATH
-    - export PATH="$HOME/.cargo/bin:$PATH"
-
-    # اجرای تست Rust
-    - cd Rust
-    - cargo test
+    # اجرای تست Rust داخل کانتینر رسمی
+    - docker run --rm -v $CI_PROJECT_DIR/Rust:/app -w /app rust:1.88 cargo test
 
 # -------------------------
 # Build: Python Image
