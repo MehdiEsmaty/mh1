@@ -3,27 +3,49 @@ stages:
   - build
   - deploy
 
+variables:
+  PYTHON_IMAGE: python:3.9-slim
+  RUST_IMAGE: rust:1.88
+
 # -------------------------
-# Test: Python Flask (local execution)
+# Test: Python Flask (isolated copy, no host writes)
 # -------------------------
 test_python:
   stage: test
   tags:
     - runner1
   script:
-    - pip install --no-cache-dir -r Python/requirements.txt
-    - python3 Python/test_app.py
+    # run tests inside container, mounting source read‑only and copying into tmpfs
+    - docker run --rm \
+        -v "$CI_PROJECT_DIR/Python":/src:ro \
+        --tmpfs /app:rw \
+        -w /app \
+        $PYTHON_IMAGE \
+        sh -euxc "\
+          cp -r /src/* . && \
+          pip install --no-cache-dir --prefix=/tmp/pip-temp -r requirements.txt && \
+          PYTHONPATH=/tmp/pip-temp/lib/python3.9/site-packages \
+            PYTHONDONTWRITEBYTECODE=1 \
+            python test_app.py"
 
 # -------------------------
-# Test: Rust Actix (local execution)
+# Test: Rust Actix (isolated copy, no host writes)
 # -------------------------
 test_rust:
   stage: test
   tags:
     - runner1
   script:
-    - cd Rust
-    - cargo test
+    # run tests inside container, mounting source read‑only and copying into tmpfs
+    - docker run --rm \
+        -v "$CI_PROJECT_DIR/Rust":/src:ro \
+        --tmpfs /app:rw \
+        -w /app \
+        $RUST_IMAGE \
+        sh -euxc "\
+          cp -r /src/* . && \
+          export CARGO_TARGET_DIR=/tmp/target && \
+          cargo test"
 
 # -------------------------
 # Build: Python Image
