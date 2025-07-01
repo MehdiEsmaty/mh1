@@ -36,4 +36,6 @@ deploy:
   tags:
     - runner1
   script:
+    # اگر می‌خواهی شبکه و volume هم پاک شود:
+    - docker-compose down || true
     - docker-compose up -d
