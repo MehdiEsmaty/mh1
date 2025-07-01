@@ -9,6 +9,11 @@ services:
     ports:
       - "5000:5000"
     restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"      # هر فایل لاگ تا 5 مگابایت
+        max-file: "3"       # حداکثر ۳ فایل چرخشی
 
   rust_app:
     build:
@@ -18,3 +23,8 @@ services:
     ports:
       - "8080:8080"
     restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "3"
