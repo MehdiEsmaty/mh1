@@ -3,6 +3,9 @@ stages:
   - build
   - deploy
 
+variables:
+  DOCKER_COMPOSE_FILE: docker-compose.yml
+
 test_python:
   stage: test
   tags:
@@ -22,20 +25,25 @@ build_python:
   tags:
     - runner1
   script:
-    - docker build -t microservices_python_app ./Python
+    - docker build -t mh1-python_app ./Python
 
 build_rust:
   stage: build
   tags:
     - runner1
   script:
-    - docker build -t microservices_rust_app ./Rust
+    - docker build -t mh1-rust_app ./Rust
 
 deploy:
   stage: deploy
   tags:
     - runner1
   script:
-    # اگر می‌خواهی شبکه و volume هم پاک شود:
-    - docker-compose down || true
-    - docker-compose up -d
+    # برداشتن کانتینرهای قبلی (اپ + monitoring)
+    - docker-compose -f $DOCKER_COMPOSE_FILE down || true
+    # بالا آوردن اپ‌ها و استک مانیتورینگ
+    - docker-compose -f $DOCKER_COMPOSE_FILE up -d
+    # تست سلامت Prometheus و Grafana
+    - sleep 10
+    - docker ps --filter "name=prometheus" --filter "status=running"
+    - docker ps --filter "name=grafana" --filter "status=running"

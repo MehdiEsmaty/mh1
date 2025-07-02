@@ -1,10 +1,11 @@
 version: "3.8"
 
 services:
+  # -------------------------
+  # اپلیکیشن‌ها
+  # -------------------------
   python_app:
-    build:
-      context: ./Python
-      dockerfile: Dockerfile
+    image: mh1-python_app
     container_name: flask_hello
     ports:
       - "5000:5000"
@@ -12,19 +13,63 @@ services:
     logging:
       driver: "json-file"
       options:
-        max-size: "5m"      # هر فایل لاگ تا 5 مگابایت
-        max-file: "3"       # حداکثر ۳ فایل چرخشی
+        max-size: "5m"
+        max-file: "3"
 
   rust_app:
-    build:
-      context: ./Rust
-      dockerfile: Dockerfile
+    image: mh1-rust_app
     container_name: actix_hello
     ports:
-      - "8080:8080"
+      - "8088:8080"
     restart: unless-stopped
     logging:
       driver: "json-file"
       options:
         max-size: "5m"
         max-file: "3"
+
+  # -------------------------
+  # monitoring stack (host network)
+  # -------------------------
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.47.2
+    network_mode: host
+    privileged: true
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+
+  node_exporter:
+    image: prom/node-exporter:latest
+    network_mode: host
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.ignored-mount-points="^/(sys|proc|dev)($|/)"'
+
+  blackbox_exporter:
+    image: prom/blackbox-exporter:latest
+    network_mode: host
+
+  prometheus:
+    image: prom/prometheus:latest
+    network_mode: host
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+
+  grafana:
+    image: grafana/grafana:latest
+    network_mode: host
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: "secret"
+    volumes:
+      - grafana_data:/var/lib/grafana
+
+volumes:
+  grafana_data:
