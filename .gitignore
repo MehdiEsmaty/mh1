@@ -1,0 +1,111 @@
+#####################
+# Rust
+#####################
+/target/
+*.rs.bk
+
+# Binaries
+*.exe
+*.out
+*.o
+*.a
+*.so
+*.dll
+
+# Core dumps
+core
+*.core
+
+#####################
+# Python / Flask
+#####################
+# Bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+.ENV/
+pip-wheel-metadata/
+
+# Distribution / Packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# PyInstaller
+*.spec
+
+# Flask specific
+instance/
+*.db
+*.sqlite3
+
+# dotenv files
+.env
+.env.*
+
+# Logs and test coverage
+*.log
+coverage/
+htmlcov/
+.tox/
+.nox/
+.pytest_cache/
+.cache/
+
+#####################
+# Docker
+#####################
+*.tar
+*.img
+*.container
+*.pid
+*.sock
+.docker/
+docker-compose.override.yml
+docker-compose.local.yml
+docker-compose.dev.yml
+docker-compose.test.yml
+
+# docker volume data (optional)
+volumes/
+data/
+db-data/
+*.log
+
+#####################
+# CI/CD
+#####################
+# GitLab CI cache
+.gitlab-ci-local/
+.gitlab/
+.cache/
+artifacts/
+
+#####################
+# Common
+#####################
+# Editor files
+*.swp
+*.swo
+*.bak
+*.tmp
+*.old
+*.orig
+
+# OS-specific
+.DS_Store
+Thumbs.db
+
+# IDEs
+.idea/
+.vscode/
+
+# Backup
+*~
