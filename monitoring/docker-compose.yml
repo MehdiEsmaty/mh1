@@ -2,8 +2,30 @@
 version: "3.8"
 
 services:
+  # -------------------------
+  # Metrics & Dashboard stack
+  # -------------------------
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    network_mode: host
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    network_mode: host
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: "secret"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    restart: unless-stopped
+
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:v0.47.2
+    container_name: cadvisor
     network_mode: host
     privileged: true
     volumes:
@@ -11,9 +33,11 @@ services:
       - /var/run:/var/run:ro
       - /sys:/sys:ro
       - /var/lib/docker/:/var/lib/docker:ro
+    restart: unless-stopped
 
   node_exporter:
     image: prom/node-exporter:latest
+    container_name: node_exporter
     network_mode: host
     volumes:
       - /proc:/host/proc:ro
@@ -23,24 +47,37 @@ services:
       - '--path.procfs=/host/proc'
       - '--path.sysfs=/host/sys'
       - '--collector.filesystem.ignored-mount-points="^/(sys|proc|dev)($|/)"'
+    restart: unless-stopped
 
   blackbox_exporter:
     image: prom/blackbox-exporter:latest
+    container_name: blackbox_exporter
     network_mode: host
+    restart: unless-stopped
 
-  prometheus:
-    image: prom/prometheus:latest
+  # -------------------------
+  # Logging stack (Loki/Promtail)
+  # -------------------------
+  loki:
+    image: grafana/loki:2.9.1
+    container_name: loki
     network_mode: host
     volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./loki-config.yml:/etc/loki/local-config.yaml:ro
+    command: -config.file=/etc/loki/local-config.yaml
+    restart: unless-stopped
 
-  grafana:
-    image: grafana/grafana:latest
+  promtail:
+    image: grafana/promtail:2.9.1
+    container_name: promtail
     network_mode: host
-    environment:
-      GF_SECURITY_ADMIN_PASSWORD: "secret"
     volumes:
-      - grafana_data:/var/lib/grafana
+      - ./promtail-config.yml:/etc/promtail/config.yml:ro
+      - /var/log:/var/log:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /etc/machine-id:/etc/machine-id:ro
+    command: -config.file=/etc/promtail/config.yml
+    restart: unless-stopped
 
 volumes:
   grafana_data:
