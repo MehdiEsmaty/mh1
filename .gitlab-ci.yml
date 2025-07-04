@@ -4,46 +4,56 @@ stages:
   - deploy
 
 variables:
-  DOCKER_COMPOSE_FILE: docker-compose.yml
+  APP_COMPOSE: docker-compose.yml
+  MON_COMPOSE: monitoring/docker-compose.yml
 
+# --- مراحل تست و بیلد بی‌تغییر ---
 test_python:
   stage: test
-  tags:
-    - runner1
+  tags: [runner1]
   script:
-    - docker run --rm -v "$CI_PROJECT_DIR/Python":/app:ro -w /app python:3.9-slim sh -c "pip install --no-cache-dir --prefix=/tmp/pip-temp -r requirements.txt && PYTHONPATH=/tmp/pip-temp/lib/python3.9/site-packages PYTHONDONTWRITEBYTECODE=1 python test_app.py"
+    - docker run --rm -v "$CI_PROJECT_DIR/Python":/app:ro -w /app python:3.9-slim sh -c "pip install --no-cache-dir -r requirements.txt && python test_app.py"
 
 test_rust:
   stage: test
-  tags:
-    - runner1
+  tags: [runner1]
   script:
     - docker run --rm -v "$CI_PROJECT_DIR/Rust":/app:ro -w /app rust:1.88 sh -c "CARGO_TARGET_DIR=/tmp/target cargo test"
 
 build_python:
   stage: build
-  tags:
-    - runner1
+  tags: [runner1]
   script:
     - docker build -t mh1-python_app ./Python
 
 build_rust:
   stage: build
-  tags:
-    - runner1
+  tags: [runner1]
   script:
     - docker build -t mh1-rust_app ./Rust
 
+# --- مرحله Deploy با دو Compose مجزا ---
 deploy:
   stage: deploy
-  tags:
-    - runner1
+  tags: [runner1]
   script:
-    # برداشتن کانتینرهای قبلی (اپ + monitoring)
-    - docker-compose -f $DOCKER_COMPOSE_FILE down || true
-    # بالا آوردن اپ‌ها و استک مانیتورینگ
-    - docker-compose -f $DOCKER_COMPOSE_FILE up -d
-    # تست سلامت Prometheus و Grafana
-    - sleep 10
+    # ۱) پایین آوردن کانتینرهای قبلی اپ
+    - docker-compose -f $APP_COMPOSE down || true
+
+    # ۲) ساخت و دسترسی فولدرهای Loki
+    - mkdir -p monitoring/loki/{wal,chunks,index,index_cache}
+    - chmod -R 777 monitoring/loki
+
+    # ۳) بالا آوردن اپلیکیشن‌ها
+    - docker-compose -f $APP_COMPOSE up -d
+
+    # ۴) پایین آوردن استک مانیتورینگ پیشین (در صورت وجود)
+    - docker-compose -f $MON_COMPOSE down || true
+
+    # ۵) بالا آوردن استک مانیتورینگ
+    - docker-compose -f $MON_COMPOSE up -d
+
+    # ۶) اطمینان از سلامت Prometheus و Grafana
+    - sleep 15
     - docker ps --filter "name=prometheus" --filter "status=running"
-    - docker ps --filter "name=grafana" --filter "status=running"
+    - docker ps --filter "name=grafana"   --filter "status=running"

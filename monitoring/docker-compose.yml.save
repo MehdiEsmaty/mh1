@@ -1,3 +1,4 @@
+# monitoring/docker-compose.yml
 version: "3.8"
 
 services:
@@ -63,10 +64,6 @@ services:
     network_mode: host
     volumes:
       - ./loki-config.yml:/etc/loki/local-config.yaml:ro
-      - ./loki/wal:/wal
-      - ./loki/chunks:/loki/chunks
-      - ./loki/index:/loki/index
-      - ./loki/index_cache:/loki/index_cache
     command: -config.file=/etc/loki/local-config.yaml
     restart: unless-stopped
 
@@ -84,4 +81,4 @@ services:
 
 volumes:
   grafana_data:
-    external: false
+ 
