@@ -1,0 +1,45 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml # Promtail uses this to track its reading progress
+
+clients:
+  # Loki is on the host network, so it's accessible via localhost and its default port 3100
+  - url: http://localhost:3100/loki/api/v1/push 
+
+scrape_configs:
+  - job_name: docker
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock # Connects to Docker daemon via socket
+        refresh_interval: 5s # How often to check for new containers/logs
+    relabel_configs:
+      # Keep logs only from containers named 'flask_hello' or 'actix_hello'
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/(flask_hello|actix_hello)'
+        action: keep
+      # Extract container name and add it as a label to logs
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/(.*)'
+        target_label: container_name
+      # Extract image name and add it as a label
+      - source_labels: ['__meta_docker_image_name']
+        regex: '(.*)'
+        target_label: image_name
+      # Extract service name (from docker-compose labels) and add it as a label
+      - source_labels: ['__meta_docker_container_label_com_docker_compose_service']
+        regex: '(.*)'
+        target_label: service_name
+    pipeline_stages:
+      # Regex to parse the web server access log format
+      - regex:
+          expression: '^(?P<client_ip>\S+) \S+ \S+ \[(?P<timestamp>.*?)\] "(?P<http_method>\S+) (?P<request_path>\S+) HTTP/\d\.\d" (?P<status_code>\d+)(?: -| (?P<response_size>\d+))?$'
+      - labels:
+          # Promote extracted fields to labels for easy filtering in Grafana/LogQL
+          client_ip:
+          http_method:
+          request_path:
+          status_code:
+      - output:
+          source: message

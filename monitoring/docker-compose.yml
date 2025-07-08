@@ -55,33 +55,32 @@ services:
     restart: unless-stopped
 
   # -------------------------
-  # Logging stack (Loki/Promtail)
+  # Loki Logging Stack
   # -------------------------
   loki:
-    image: grafana/loki:2.9.1
+    image: grafana/loki:latest
     container_name: loki
-    network_mode: host
-    volumes:
-      - ./loki-config.yml:/etc/loki/local-config.yaml:ro
-      - ./loki/wal:/wal
-      - ./loki/chunks:/loki/chunks
-      - ./loki/index:/loki/index
-      - ./loki/index_cache:/loki/index_cache
+    network_mode: host # Use host network mode
     command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      # Optional: if you have a custom Loki config file
+      # - ./loki-config.yaml:/etc/loki/local-config.yaml
+      - loki_data:/loki # Persist Loki data
     restart: unless-stopped
 
   promtail:
-    image: grafana/promtail:2.9.1
+    image: grafana/promtail:latest
     container_name: promtail
-    network_mode: host
+    network_mode: host # Use host network mode
     volumes:
-      - ./promtail-config.yml:/etc/promtail/config.yml:ro
-      - /var/log:/var/log:ro
-      - /var/lib/docker/containers:/var/lib/docker/containers:ro
-      - /etc/machine-id:/etc/machine-id:ro
-    command: -config.file=/etc/promtail/config.yml
+      - ./promtail-config.yaml:/etc/promtail/config.yaml:ro # Promtail config file
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro # Docker log files
+      - /var/run/docker.sock:/var/run/docker.sock:ro # Docker socket for metadata
+    command: -config.file=/etc/promtail/config.yaml
     restart: unless-stopped
+    depends_on:
+      - loki # Ensure Loki starts before Promtail
 
 volumes:
-  grafana_data:
-    external: false
+  grafana_data: # Existing Grafana volume
+  loki_data: # New volume for Loki data persistence
