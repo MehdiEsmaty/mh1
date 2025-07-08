@@ -37,20 +37,16 @@ deploy:
   stage: deploy
   tags: [runner1]
   script:
-    # ۱) پایین آوردن کانتینرهای قبلی اپ
+    # 1) پایین آوردن کانتینرهای قبلی اپ
     - docker-compose -f $APP_COMPOSE down || true
 
-    # ۲) ساخت و دسترسی فولدرهای Loki
-    - mkdir -p monitoring/loki/{wal,chunks,index,index_cache}
-    - chmod -R 777 monitoring/loki
-
-    # ۳) بالا آوردن اپلیکیشن‌ها
+    # 2) بالا آوردن اپلیکیشن‌ها
     - docker-compose -f $APP_COMPOSE up -d
 
-    # ۴) پایین آوردن استک مانیتورینگ پیشین (در صورت وجود)
+    # 3) پایین آوردن استک مانیتورینگ پیشین (در صورت وجود)
     - docker-compose -f $MON_COMPOSE down || true
 
-    # ۵) بالا آوردن استک مانیتورینگ
+    # 4) بالا آوردن استک مانیتورینگ
     - docker-compose -f $MON_COMPOSE up -d
 
     # ۶) اطمینان از سلامت Prometheus و Grafana
